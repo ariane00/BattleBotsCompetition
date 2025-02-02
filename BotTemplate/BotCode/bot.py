@@ -9,6 +9,7 @@ class Bot(ABot):
         # todo logic
         self.metadata = session_info.metadata 
         self.influence_target = session_info.influence_target
+        existing_usernames = set()
         
         def username_generator():
 
@@ -18,12 +19,14 @@ class Bot(ABot):
             ("Paul", "Pauly"),("Emily", "Em"), ("Andrew", "Drew"), ("Donna", "Donnie"), ("Joshua", "Josh"), ("Michelle", "Mitch"),("Kenneth", "Ken"), ("Dorothy", "Dot"), ("Kevin", "Kev"), ("Carol", "Carrie"), ("Brian", "Bri"),("Amanda", "Mandy"), ("George", "Georgie"), ("Melissa", "Mel"), ("Edward", "Ed"), ("Deborah", "Debbie")]
             real_name, nickname = random.choice(popular_nicknames)
 
-            #Adding Digits Randomly
-            num_digits = random.randint(0, 4) 
+
+            num_digits = random.randint(0, 4) #random digits
             suffix = ''.join(random.choices(string.digits, k=num_digits))  
             username = f"{nickname}{suffix}"
-            name = real_name if random.random() < 0.7 else nickname #sometimes real name sometimes nickname 
-            return username, name
+            if username not in existing_usernames:
+                existing_usernames.add(username)
+                name = real_name if random.random() < 0.7 else nickname  # Sometimes use real name, sometimes nickname
+                return username, name
         
         user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
 
