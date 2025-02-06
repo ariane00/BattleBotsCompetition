@@ -1,0 +1,12 @@
+2025-02-02 21:17:50,969 - INFO - START SESSION 10
+2025-02-02 21:17:50,983 - INFO - Session Info response status code: 200
+2025-02-02 21:17:51,033 - INFO - Create User response status code: 201
+2025-02-02 21:17:51,075 - INFO - Get Sub-Session response status code: 200
+2025-02-02 21:17:51,364 - INFO - Inject Sub-Session response status code: 201
+2025-02-02 21:17:51,472 - INFO - Get Sub-Session response status code: 200
+2025-02-02 21:17:52,058 - INFO - Inject Sub-Session response status code: 201
+2025-02-02 21:17:52,113 - INFO - Get Sub-Session response status code: 200
+2025-02-02 21:17:52,814 - INFO - Inject Sub-Session response status code: 201
+2025-02-02 21:17:52,864 - INFO - Get Sub-Session response status code: 200
+2025-02-02 21:17:57,504 - INFO - Inject Sub-Session response status code: 201
+2025-02-02 21:17:57,505 - INFO - END SESSION 10
