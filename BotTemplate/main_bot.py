@@ -11,12 +11,12 @@ from api_requests import get_session_info, create_user_id, get_sub_session, subm
 import json
 
 # Competition Environment Variables
-#session_id = int(os.getenv('SESSION_ID'))
-#code_max_time = int(os.getenv('MAX_TIME'))
+session_id = int(os.getenv('SESSION_ID'))
+code_max_time = int(os.getenv('MAX_TIME'))
 
 # Testing Environment Variables
-session_id = 2
-code_max_time = 3601
+# session_id = 2
+# code_max_time = 3601
 
 logging.basicConfig(
     filename='run.log',
@@ -46,14 +46,13 @@ def main():
         session_info_response.raise_for_status()
         # Print the response output
         logging.info(f"Session Info response status code: {session_info_response.status_code}")
-        #print("Session Info response status code:", session_info_response.status_code)
+        print("Session Info response status code:", session_info_response.status_code)
         #print(f"Session Info output: {json.dumps(session_info_response.json(), indent=4)}\n- - - - -")
 
         # Give the session info to the bot teams and the id of the present sub_session and receive from their create_user
         # function their new users
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(code_max_time)
-
         
         
         new_users = bot.create_user(session_info)
@@ -79,7 +78,7 @@ def main():
         create_user_response.raise_for_status()
         # Print the response status
         logging.info(f"Create User response status code: {create_user_response.status_code}")
-        #print("Create User response status code:", create_user_response.status_code)
+        print("Create User response status code:", create_user_response.status_code)
         #print(f"Create User output: {json.dumps(create_user_response.json(), indent=4)}\n- - - - -")
 
         #Make the Users list
@@ -94,7 +93,7 @@ def main():
             get_sub_response.raise_for_status()
             # Print the response status
             logging.info(f"Get Sub-Session response status code: {get_sub_response.status_code}")
-            #print("Get Sub-Session response status code:", get_sub_response.status_code)
+            print("Get Sub-Session response status code:", get_sub_response.status_code)
             #print(f"Get Sub-Session output:{json.dumps(get_sub_response.json(), indent=4)}\n- - - - -")
 
             # Run generate_content to make the submission
@@ -119,7 +118,7 @@ def main():
             submission_confirmation.raise_for_status()
             # Print the response status
             logging.info(f"Inject Sub-Session response status code: {submission_confirmation.status_code}")
-            #print("Inject Sub-Session response status code:", submission_confirmation.status_code)
+            print("Inject Sub-Session response status code:", submission_confirmation.status_code)
             #print(f"Inject Sub-Session output: {json.dumps(submission_confirmation.json(), indent=4)}\n- - - - -")
 
         signal.alarm(0)
