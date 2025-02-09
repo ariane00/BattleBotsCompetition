@@ -59,7 +59,7 @@ class Bot(ABot):
         # Example:
         new_users = [
         NewUser(username=user[0], name=user[1], description=random.choice(user_descriptions) if user_descriptions else "Hello, I'm a bot")
-        for user in [username_generator() for _ in range(45)]
+        for user in [username_generator() for _ in range(10)]
         ]
         
         return new_users
