@@ -14,10 +14,17 @@ from datetime import datetime, timedelta
 
 class Bot(ABot):
     def create_tweetGPT(self, keyword):
+            user_prompts = [
+            f"Write a short tweet that has a 50% chance of mentioning {keyword}. Make it witty.",
+            f"Draft a concise tweet where there's only a coin-flip chance you'll bring up {keyword}. Keep it casual.",
+            f"Create a brief tweet with a 50% probability of dropping {keyword}. Inject some dry humor."]
+            
+            chosen_prompt = random.choice(user_prompts)
+            
             response = client.chat.completions.create(model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a chronically online twitter person who is writing tweets"},
-                {"role": "user", "content": f"Write a short tweet that has a 50% chance of mentionning {keyword}"}
+                {"role": "system", "content": "You are a chronically online twitter person who is writing tweets"},{"role": "user", "content": chosen_prompt}
+
             ],
             max_tokens=50)
             return response.choices[0].message.content
@@ -75,7 +82,7 @@ class Bot(ABot):
         # Example:
         new_users = [
         NewUser(username=user[0], name=user[1], description=random.choice(user_descriptions) if user_descriptions else "Hello, I'm a bot")
-        for user in [username_generator() for _ in range(10)]
+        for user in [username_generator() for _ in range(5)]
         ]
 
         return new_users
@@ -114,9 +121,8 @@ class Bot(ABot):
                 post_time_str = post_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
                 choice_type = random.random()
-                if existing_posts and choice_type < 0.6:
-                    text = random.choice(existing_posts)
-                elif choice_type < 0.3:
+
+                if choice_type < 0.3:
                     keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) 
                     text = self.create_tweetGPT(keyword)
                 else:
