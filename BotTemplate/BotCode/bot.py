@@ -13,22 +13,26 @@ client = OpenAI(api_key=API_KEY)
 from datetime import datetime, timedelta
 
 class Bot(ABot):
-    def create_tweetGPT(self, keyword):
+    def create_tweetGPT(self, keyword, previous_posts = None):
             user_prompts = [
-            f"Write a short tweet that has a 50% chance of mentioning {keyword}. Make it witty.",
-            f"Draft a concise tweet where there's only a coin-flip chance you'll bring up {keyword}. Keep it casual.",
-            f"Create a brief tweet with a 50% probability of dropping {keyword}. Inject some dry humor."]
+            f"Write a short tweet that uses a viral twitter joke",
+            f"Draft a short tweet that talks about the weather",
+            f"Create a tweet that mentions a celebrity",
+            f"Draft a tweet that talks about food/being hungry"]
             
-            chosen_prompt = random.choice(user_prompts)
+            if previous_posts:
+                context_posts = "\n".join([f"- {post}" for post in previous_posts[-15:]]) 
+                chosen_prompt = f"Here are some previous tweets:\n{context_posts}\n\nUse the same style and tone.\n{random.choice(user_prompts)}"
+            else:
+                chosen_prompt = random.choice(user_prompts)
             
             response = client.chat.completions.create(model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a chronically online twitter person who is writing tweets"},{"role": "user", "content": chosen_prompt}
-
             ],
-            max_tokens=50)
+            )
             return response.choices[0].message.content
-
+    
     def create_user(self, session_info):
         # todo logic
         self.metadata = session_info.metadata 
@@ -58,7 +62,6 @@ class Bot(ABot):
             use_funny_name = random.choice([True, False])
             real_name, nickname = random.choice(funny_nicknames if use_funny_name else normal_nicknames)
 
-
             #end digits
             num_digits = random.randint(0, 4) #random digits
             suffix = ''.join(random.choices(string.digits, k=num_digits))  
@@ -77,22 +80,34 @@ class Bot(ABot):
                 name = real_name if random.random() < 0.7 else nickname  # Sometimes use real name, sometimes nickname
                 return username, name
 
-        user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
+        def create_descriptionGPT(self, keyword):
+            user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
+            if len(user_descriptions) > 30:
+                user_descriptions = random.sample(user_descriptions, 30)
+            
+            other_descriptions = "\n".join([f"{i+1}. {desc}" for i, desc in enumerate(user_descriptions)])
+            response = client.chat.completions.create(model="gpt-4",
+            messages=[{"role": "system", "content": "Rewrite these user descriptions, mix them up or add a fun twist but keep the same tone and structures (important), Return each description on a new line without numbering or extra formatting."},
+                  {"role": "user", "content": other_descriptions}],
+            )
+            
+            rewritten_descriptions = response.choices[0].message.content.split("\n")
+            return [desc.strip() for desc in rewritten_descriptions if desc.strip()]
 
-        # Example:
+        user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
+        new_descriptions = create_descriptionGPT(client, user_descriptions)
+
+
         new_users = [
-        NewUser(username=user[0], name=user[1], description=random.choice(user_descriptions) if user_descriptions else "Hello, I'm a bot")
-        for user in [username_generator() for _ in range(5)]
+            NewUser(username=user[0], name=user[1], description=new_descriptions[i])
+            for i, user in enumerate([username_generator() for _ in range(5)])
         ]
 
         return new_users
 
     def generate_content(self, datasets_json, users_list):
         posts = []
-
         influence_target = getattr(datasets_json, "influence_target", "default_topic")
-
-
         topic_keywords = []
 
         if not influence_target or influence_target == "default_topic":
@@ -106,10 +121,11 @@ class Bot(ABot):
 
         for user in users_list:
             post_count = random.randint(10, 15)
+            previous_posts = []
 
             if not self.start_time or not self.end_time:
-                session_start = "2024-03-17T00:20:30.000Z"
-                session_end = "2024-03-17T00:20:30.000Z"
+                session_start = "2024-03-27T00:00:00Z"
+                session_end = "2024-03-29T00:00:00Z"
             else:
                 session_start = datetime.fromisoformat(self.start_time.replace("Z", ""))
                 session_end = datetime.fromisoformat(self.end_time.replace("Z", ""))
@@ -122,10 +138,7 @@ class Bot(ABot):
 
                 choice_type = random.random()
 
-                if choice_type < 0.3:
-                    keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) 
-                    text = self.create_tweetGPT(keyword)
-                else:
+                if choice_type < 0.2 or len(previous_posts) == 0:
                     keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) 
                     text = random.choice([
                         f"Can't stop thinking about {keyword}.",f"Why is everyone talking about {keyword}?",f"Anyone else obsessed with {keyword} lately?",f"{keyword} is taking over my life!",f"What are your thoughts on {keyword}?",f"Just saw something wild about {keyword}.",f"Let’s settle this: is {keyword} overrated?",f"Can’t believe what just happened in {keyword}!",
@@ -143,7 +156,11 @@ class Bot(ABot):
                         f"Raise your hand if {keyword} ruined your sleep schedule.",f"{keyword} is my toxic trait.",f"I want a Netflix series about {keyword}.",f"The world would be boring without {keyword}.",f"I bet you didn’t know this about {keyword}.",f"{keyword} is the content I signed up for.",
                         f"I feel like I should be taking notes on {keyword}.",f"The only reason I logged in today was {keyword}.",f"{keyword} is my personality now.",f"Petition to make {keyword} a national holiday.",f"{keyword} is living rent-free in my brain."
                     ])
+                else:
+                    text = self.create_tweetGPT(keyword, existing_posts)
+                    
 
                 posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
+                previous_posts.append(posts)
 
         return posts
