@@ -18,7 +18,12 @@ class Bot(ABot):
             f"Write a short tweet that uses a viral twitter joke",
             f"Draft a short tweet that talks about the weather",
             f"Create a tweet that mentions a celebrity",
-            f"Draft a tweet that talks about food/being hungry"]
+            f"Draft a tweet that talks about food/being hungry", f"Write a short tweet using a popular meme format", f"Draft a tweet about a relatable everyday struggle", f"Create a tweet that makes a funny observation about technology",
+            f"Write a tweet that jokes about procrastination",
+            f"Draft a tweet about something weird your pet just did",
+            f"Create a tweet about the struggles of waking up early",
+            f"Write a tweet that humorously complains about adulthood",
+            f"Draft a tweet that jokes about relationships or dating"]
             
             if previous_posts:
                 context_posts = "\n".join([f"- {post}" for post in previous_posts[-15:]]) 
@@ -63,7 +68,7 @@ class Bot(ABot):
             real_name, nickname = random.choice(funny_nicknames if use_funny_name else normal_nicknames)
 
             #end digits
-            num_digits = random.randint(0, 4) #random digits
+            num_digits = random.randint(0, 2) #random digits
             suffix = ''.join(random.choices(string.digits, k=num_digits))  
             username = f"{nickname}{suffix}"
 
@@ -82,8 +87,8 @@ class Bot(ABot):
 
         def create_descriptionGPT(self, keyword):
             user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
-            if len(user_descriptions) > 30:
-                user_descriptions = random.sample(user_descriptions, 30)
+            if len(user_descriptions) > 50:
+                user_descriptions = random.sample(user_descriptions, 50)
             
             other_descriptions = "\n".join([f"{i+1}. {desc}" for i, desc in enumerate(user_descriptions)])
             response = client.chat.completions.create(model="gpt-4",
