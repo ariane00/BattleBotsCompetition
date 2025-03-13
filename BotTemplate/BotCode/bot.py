@@ -81,44 +81,55 @@ class Bot(ABot):
         #print("Extracted Keywords:", topic_keywords) 
 
         existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
+        all_sub_sessions = [
+            {"sub_session_id": 1, "start_time": "2024-03-16T00:00:00.000Z", "end_time": "2024-03-16T17:37:00.000Z"},
+            {"sub_session_id": 2, "start_time": "2024-03-16T17:37:01.000Z", "end_time": "2024-03-17T00:56:00.000Z"},
+            {"sub_session_id": 3, "start_time": "2024-03-17T00:56:01.000Z", "end_time": "2024-03-17T13:34:30.000Z"},
+            {"sub_session_id": 4, "start_time": "2024-03-17T13:34:31.000Z", "end_time": "2024-03-18T00:00:00.000Z"}
+        ]
+           
+        for sub_session in all_sub_sessions:
+            sub_session_id = sub_session["sub_session_id"]
+            sub_session_start = datetime.fromisoformat(sub_session["start_time"].replace("Z", ""))
+            sub_session_end = datetime.fromisoformat(sub_session["end_time"].replace("Z", ""))
 
-        for user in users_list:
-            post_count = random.randint(10, 15)
-
-            if not self.start_time or not self.end_time:
-                session_start = "2024-03-16T00:20:30.000Z"
-                session_end = "2024-03-18T00:20:30.000Z"
-            else:
-                session_start = datetime.fromisoformat(self.start_time.replace("Z", ""))
-                session_end = datetime.fromisoformat(self.end_time.replace("Z", ""))
-
-
-            for _ in range(post_count):
-                random_offset = random.uniform(0, (session_end - session_start).total_seconds())
-                post_time = session_start + timedelta(seconds=random_offset)
-                post_time_str = post_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-
-                if existing_posts and random.random() < 0.85:
-                    text = random.choice(existing_posts)
+            for user in users_list:
+                post_count = random.randint(10, 15)
+    
+                if not self.start_time or not self.end_time:
+                    session_start = "2024-03-16T00:20:30.000Z"
+                    session_end = "2024-03-18T00:20:30.000Z"
                 else:
-                    keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) if topic_keywords else "NO_VALID_TOPICS"
-                    text = random.choice([
-                        f"Can't stop thinking about {keyword}.",f"Why is everyone talking about {keyword}?",f"Anyone else obsessed with {keyword} lately?",f"{keyword} is taking over my life!",f"What are your thoughts on {keyword}?",f"Just saw something wild about {keyword}.",f"Let’s settle this: is {keyword} overrated?",f"Can’t believe what just happened in {keyword}!",
-                        f"My feed is full of {keyword}, and I’m not mad about it.",f"Lowkey addicted to {keyword}.",f"If you don’t love {keyword}, we can’t be friends.",f"Does anyone still care about {keyword}?",f"Need more {keyword} content ASAP.",
-                        f"I could talk about {keyword} all day.",f"Explain {keyword} to me like I'm five.",f"Why is {keyword} trending again?",f"{keyword} is pure nostalgia!",f"I swear {keyword} keeps getting better.",f"Who else remembers when {keyword} first started?",f"What’s your unpopular opinion on {keyword}?",
-                        f"I might be the only one who still follows {keyword}.",f"Just realized I’ve been following {keyword} for years.",f"{keyword} reminds me of simpler times.",f"Not gonna lie, {keyword} had me in tears today.",f"Wish I could experience {keyword} for the first time again.",f"Is it just me, or is {keyword} everywhere?",f"I need a full documentary on {keyword}.",
-                        f"What’s the best moment in {keyword} history?",f"{keyword} fans, assemble!",f"I have so many questions about {keyword}.",f"Somebody explain {keyword} to me!",f"{keyword} just changed the game!",f"This take on {keyword} is actually genius.",
-                        f"Can’t believe I slept on {keyword}.",f"Why didn’t anyone tell me {keyword} was this good?",f"{keyword} discourse is getting out of hand.",f"The debate around {keyword} is wild.",f"If you could change one thing about {keyword}, what would it be?",
-                        f"Okay, but imagine {keyword} in 10 years.",f"Looking back, {keyword} was ahead of its time.",f"{keyword} stans are built different.",f"What’s the best way to get into {keyword}?",f"Convince me to care about {keyword}.",f"If {keyword} had a theme song, what would it be?",f"I feel like {keyword} is misunderstood.",f"People really sleep on {keyword}.",f"{keyword} deserves more respect.",
-                        f"Why is {keyword} so controversial?",f"Tell me one fun fact about {keyword}.",f"Okay but hear me out: {keyword}.",f"I’m about to do a deep dive on {keyword}.",f"Every time I try to ignore {keyword}, it pulls me back in.",f"Today’s hot take: {keyword} is actually amazing.",f"{keyword} appreciation post!",f"Tell me something I don’t know about {keyword}.",f"If you don’t follow {keyword}, you’re missing out.",
-                        f"{keyword} needs its own fan club.",f"I have a love-hate relationship with {keyword}.",f"What’s the wildest thing about {keyword}?",f"The more I learn about {keyword}, the more obsessed I get.",
-                        f"{keyword} makes me feel some type of way.",f"Do we think {keyword} is here to stay?",f"Who else remembers the golden age of {keyword}?",f"Unpopular opinion: {keyword} is actually great.",f"If you know, you know: {keyword}.",f"{keyword} is proof that the internet is undefeated.",f"The best thing about {keyword}? The memes.",f"How did {keyword} even start?",f"Why do people have such strong opinions about {keyword}?",f"{keyword} hits different at 2 AM.",f"Real ones know the impact of {keyword}.",f"{keyword} is the reason I still have Twitter.",f"What’s the best {keyword} moment of all time?",f"Okay but imagine a world without {keyword}.",
-                        f"What’s the most underrated part of {keyword}?",f"I just went down a rabbit hole on {keyword}.",f"If {keyword} was a movie, who would play the lead?",f"What’s your favorite memory of {keyword}?",f"I need a whole podcast on {keyword}.",f"Nothing brings people together like {keyword}.",
-                        f"Can someone explain why {keyword} is blowing up?",f"{keyword} fans are the real MVPs.",f"One thing about {keyword}—it never disappoints.",f"{keyword} just made my day.",f"Honestly, {keyword} is an art form.",f"The only thing I care about right now is {keyword}.",f"Is {keyword} getting better or worse?",
-                        f"Raise your hand if {keyword} ruined your sleep schedule.",f"{keyword} is my toxic trait.",f"I want a Netflix series about {keyword}.",f"The world would be boring without {keyword}.",f"I bet you didn’t know this about {keyword}.",f"{keyword} is the content I signed up for.",
-                        f"I feel like I should be taking notes on {keyword}.",f"The only reason I logged in today was {keyword}.",f"{keyword} is my personality now.",f"Petition to make {keyword} a national holiday.",f"{keyword} is living rent-free in my brain."
-                    ])
-
-                posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
+                    session_start = datetime.fromisoformat(self.start_time.replace("Z", ""))
+                    session_end = datetime.fromisoformat(self.end_time.replace("Z", ""))
+    
+    
+                for _ in range(post_count):
+                    random_offset = random.uniform(0, (session_end - session_start).total_seconds())
+                    post_time = session_start + timedelta(seconds=random_offset)
+                    post_time_str = post_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    
+                    if existing_posts and random.random() < 0.85:
+                        text = random.choice(existing_posts)
+                    else:
+                        keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) if topic_keywords else "NO_VALID_TOPICS"
+                        text = random.choice([
+                            f"Can't stop thinking about {keyword}.",f"Why is everyone talking about {keyword}?",f"Anyone else obsessed with {keyword} lately?",f"{keyword} is taking over my life!",f"What are your thoughts on {keyword}?",f"Just saw something wild about {keyword}.",f"Let’s settle this: is {keyword} overrated?",f"Can’t believe what just happened in {keyword}!",
+                            f"My feed is full of {keyword}, and I’m not mad about it.",f"Lowkey addicted to {keyword}.",f"If you don’t love {keyword}, we can’t be friends.",f"Does anyone still care about {keyword}?",f"Need more {keyword} content ASAP.",
+                            f"I could talk about {keyword} all day.",f"Explain {keyword} to me like I'm five.",f"Why is {keyword} trending again?",f"{keyword} is pure nostalgia!",f"I swear {keyword} keeps getting better.",f"Who else remembers when {keyword} first started?",f"What’s your unpopular opinion on {keyword}?",
+                            f"I might be the only one who still follows {keyword}.",f"Just realized I’ve been following {keyword} for years.",f"{keyword} reminds me of simpler times.",f"Not gonna lie, {keyword} had me in tears today.",f"Wish I could experience {keyword} for the first time again.",f"Is it just me, or is {keyword} everywhere?",f"I need a full documentary on {keyword}.",
+                            f"What’s the best moment in {keyword} history?",f"{keyword} fans, assemble!",f"I have so many questions about {keyword}.",f"Somebody explain {keyword} to me!",f"{keyword} just changed the game!",f"This take on {keyword} is actually genius.",
+                            f"Can’t believe I slept on {keyword}.",f"Why didn’t anyone tell me {keyword} was this good?",f"{keyword} discourse is getting out of hand.",f"The debate around {keyword} is wild.",f"If you could change one thing about {keyword}, what would it be?",
+                            f"Okay, but imagine {keyword} in 10 years.",f"Looking back, {keyword} was ahead of its time.",f"{keyword} stans are built different.",f"What’s the best way to get into {keyword}?",f"Convince me to care about {keyword}.",f"If {keyword} had a theme song, what would it be?",f"I feel like {keyword} is misunderstood.",f"People really sleep on {keyword}.",f"{keyword} deserves more respect.",
+                            f"Why is {keyword} so controversial?",f"Tell me one fun fact about {keyword}.",f"Okay but hear me out: {keyword}.",f"I’m about to do a deep dive on {keyword}.",f"Every time I try to ignore {keyword}, it pulls me back in.",f"Today’s hot take: {keyword} is actually amazing.",f"{keyword} appreciation post!",f"Tell me something I don’t know about {keyword}.",f"If you don’t follow {keyword}, you’re missing out.",
+                            f"{keyword} needs its own fan club.",f"I have a love-hate relationship with {keyword}.",f"What’s the wildest thing about {keyword}?",f"The more I learn about {keyword}, the more obsessed I get.",
+                            f"{keyword} makes me feel some type of way.",f"Do we think {keyword} is here to stay?",f"Who else remembers the golden age of {keyword}?",f"Unpopular opinion: {keyword} is actually great.",f"If you know, you know: {keyword}.",f"{keyword} is proof that the internet is undefeated.",f"The best thing about {keyword}? The memes.",f"How did {keyword} even start?",f"Why do people have such strong opinions about {keyword}?",f"{keyword} hits different at 2 AM.",f"Real ones know the impact of {keyword}.",f"{keyword} is the reason I still have Twitter.",f"What’s the best {keyword} moment of all time?",f"Okay but imagine a world without {keyword}.",
+                            f"What’s the most underrated part of {keyword}?",f"I just went down a rabbit hole on {keyword}.",f"If {keyword} was a movie, who would play the lead?",f"What’s your favorite memory of {keyword}?",f"I need a whole podcast on {keyword}.",f"Nothing brings people together like {keyword}.",
+                            f"Can someone explain why {keyword} is blowing up?",f"{keyword} fans are the real MVPs.",f"One thing about {keyword}—it never disappoints.",f"{keyword} just made my day.",f"Honestly, {keyword} is an art form.",f"The only thing I care about right now is {keyword}.",f"Is {keyword} getting better or worse?",
+                            f"Raise your hand if {keyword} ruined your sleep schedule.",f"{keyword} is my toxic trait.",f"I want a Netflix series about {keyword}.",f"The world would be boring without {keyword}.",f"I bet you didn’t know this about {keyword}.",f"{keyword} is the content I signed up for.",
+                            f"I feel like I should be taking notes on {keyword}.",f"The only reason I logged in today was {keyword}.",f"{keyword} is my personality now.",f"Petition to make {keyword} a national holiday.",f"{keyword} is living rent-free in my brain."
+                        ])
+    
+                    posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
 
         return posts
