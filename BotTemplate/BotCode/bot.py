@@ -86,8 +86,8 @@ class Bot(ABot):
             post_count = random.randint(10, 15)
 
             if not self.start_time or not self.end_time:
-                session_start = "2024-03-17T00:20:30.000Z"
-                session_end = "2024-03-17T00:20:30.000Z"
+                session_start = "2024-03-16T00:20:30.000Z"
+                session_end = "2024-03-18T00:20:30.000Z"
             else:
                 session_start = datetime.fromisoformat(self.start_time.replace("Z", ""))
                 session_end = datetime.fromisoformat(self.end_time.replace("Z", ""))
