@@ -125,12 +125,12 @@ class Bot(ABot):
         existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
 
         for user in users_list:
-            post_count = random.randint(10, 15)
+            post_count = random.randint(15, 45)
             previous_posts = []
 
             if not self.start_time or not self.end_time:
-                session_start = "2024-03-27T00:00:00Z"
-                session_end = "2024-03-29T00:00:00Z"
+                session_start = "2024-03-16T00:00:00Z"
+                session_end = "2024-03-18T00:00:00Z"
             else:
                 session_start = datetime.fromisoformat(self.start_time.replace("Z", ""))
                 session_end = datetime.fromisoformat(self.end_time.replace("Z", ""))
