@@ -94,7 +94,7 @@ class Bot(ABot):
             sub_session_end = datetime.fromisoformat(sub_session["end_time"].replace("Z", ""))
 
             for user in users_list:
-                post_count = random.randint(10, 15)
+                post_count = random.randint(1, 5)
     
                 if not self.start_time or not self.end_time:
                     session_start = "2024-03-16T00:20:30.000Z"
