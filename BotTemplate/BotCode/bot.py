@@ -163,7 +163,7 @@ class Bot(ABot):
 
         new_users = [
             NewUser(username=user[0], name=user[1], description=new_descriptions[i])
-            for i, user in enumerate([username_generator() for _ in range(5)])
+            for i, user in enumerate([username_generator() for _ in range(10)])
         ]
 
         return new_users
