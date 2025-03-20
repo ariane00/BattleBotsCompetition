@@ -1,4 +1,5 @@
 from abc_classes import ABot
+from api_requests import get_sub_session
 from teams_classes import NewUser, NewPost
 import random
 import string
@@ -14,32 +15,65 @@ from datetime import datetime, timedelta
 
 class Bot(ABot):
     def create_tweetGPT(self, keyword, previous_posts = None):
-            user_prompts = [
-            f"Write a short tweet that uses a viral twitter joke",
-            f"Draft a short tweet that talks about the weather",
-            f"Create a tweet that mentions a celebrity",
-            f"Draft a tweet that talks about food/being hungry"]
-            
-            if previous_posts:
-                context_posts = "\n".join([f"- {post}" for post in previous_posts[-15:]]) 
-                chosen_prompt = f"Here are some previous tweets:\n{context_posts}\n\nUse the same style and tone.\n{random.choice(user_prompts)}"
-            else:
-                chosen_prompt = random.choice(user_prompts)
-            
-            response = client.chat.completions.create(model="gpt-4",
+        user_prompts = {
+        "en": [
+            "Complain lightheartedly about something minor that happened today, and mention the keyword.",
+            "Tweet a funny reaction to a trending topic (tied to the keyword), but make it sound personal.",
+            "Share a short, casual story about your day that ties into the keyword.",
+            "Write a tweet as though you’re telling a friend a small personal anecdote about the keyword."
+        ],
+        "fr": [
+            "Plain un petit problème personnel qui t’est arrivé aujourd’hui, en mentionnant le mot-clé.",
+            "Réagis à un sujet tendance en faisant référence au mot-clé, mais fais en sorte que ce soit personnel.",
+            "Raconte une courte anecdote sur ta journée et relie-la au mot-clé.",
+            "Écris un tweet comme si tu racontais à un ami une anecdote sur le mot-clé."
+        ]
+    }
+        personal_details = [
+            "You spilled coffee on your shirt",
+            "You got stuck in traffic",
+            "You found a funny note on your door",
+            "You nearly missed your bus",
+            "You stayed up too late binge-watching a show"
+        ]
+        selected_prompts = user_prompts.get(self.language, user_prompts["en"])
+        detail = random.choice(personal_details)
+        if previous_posts:
+            context_posts = "\n".join([f"- {post}" for post in previous_posts[-5:]])
+            base_prompt = f"Here are some of my recent tweets:\n{context_posts}\n\nMake a new tweet in a similar style and tone.\n"
+        else:
+            base_prompt = "Write a brand-new tweet.\n"
+        final_prompt = f"{base_prompt}Keep it short, casual, and personal. Today’s personal detail: '{detail}'. Mention the keyword '{keyword}'. {random.choice(selected_prompts)}"
+        system_prompt = f"You are a casual, chronically-online Twitter user who often references personal experiences and minor daily annoyances. Use a laid-back tone, occasional slang, minimal hashtags, never mention you’re an AI, and tweet in {self.language}."
+        response = client.chat.completions.create(
+            model="gpt-4",
+            temperature=0.9, presence_penalty=0.5,
             messages=[
-                {"role": "system", "content": "You are a chronically online twitter person who is writing tweets"},{"role": "user", "content": chosen_prompt}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": final_prompt}
+            ]
+        )
+        return response.choices[0].message.content.strip()
+    
+    def translate_text(self, text, target_language):
+        response = client.chat.completions.create(
+            model="gpt-4",temperature=1.4,
+            messages=[
+                {"role": "system", "content": f"Translate this tweet into {target_language} while keeping it natural and engaging."},
+                {"role": "user", "content": text}
             ],
-            )
-            return response.choices[0].message.content
+        )
+        return response.choices[0].message.content.strip()
     
     def create_user(self, session_info):
         # todo logic
-        self.metadata = session_info.metadata 
+        self.metadata = session_info.metadata
+        self.language = session_info.lang  
         self.influence_target = session_info.influence_target
         self.start_time = getattr(session_info, "start_time", None)
         self.end_time = getattr(session_info, "end_time", None)
-        self.metadata = session_info.metadata 
+        self.sub_sessions_info = session_info.sub_sessions_info
+        self.sub_sessions_id = session_info.sub_sessions_id
 
         existing_usernames = set() #to avoid repetition
 
@@ -50,7 +84,7 @@ class Bot(ABot):
 
             #name combo
             normal_nicknames = [("James", "Jim"), ("Mary", "Molly"), ("John", "Johnny"), ("Patricia", "Pat"), ("Robert", "Bob"),("Jennifer", "Jen"), ("Michael", "Mike"), ("Linda", "Lindy"), ("William", "Will"), ("Elizabeth", "Liz"),
-            ("David", "Dave"), ("Barbara", "Barb"), ("Richard", "Rich"), ("Susan", "Sue"), ("Joseph", "Joe"),("Jessica", "Jess"), ("Thomas", "Tom"), ("Sarah", "Sadie"), ("Charles", "Charlie"), ("Karen", "Kari"),
+            ("David", "Dave"), ("Barbara", "Barb"), ("Richard", "Richardinosaur"), ("Susan", "Su"), ("Joseph", "Joe"),("Jessica", "Jess"), ("Thomas", "Tom"), ("Sarah", "Sadie"), ("Charles", "Charlie"), ("Karen", "Kari"),
             ("Christopher", "Chris"), ("Nancy", "Nan"), ("Daniel", "Dan"), ("Lisa", "Lizzy"), ("Matthew", "Matt"),("Betty", "Betsy"), ("Anthony", "Tony"), ("Margaret", "Maggie"), ("Mark", "Marc"), ("Sandra", "Sandy"),("Donald", "Don"), ("Ashley", "Ash"), ("Steven", "Steve"), ("Kimberly", "Kim"),
             ("Paul", "Pauly"),("Emily", "Em"), ("Andrew", "Drew"), ("Donna", "Donnie"), ("Joshua", "Josh"), ("Michelle", "Mitch"),("Kenneth", "Ken"), ("Dorothy", "Dot"), ("Kevin", "Kev"), ("Carol", "Carrie"), ("Brian", "Bri"),("Amanda", "Mandy"), ("George", "Georgie"), ("Melissa", "Mel"), ("Edward", "Ed"), ("Deborah", "Debbie")]
             funny_nicknames = [
@@ -59,12 +93,11 @@ class Bot(ABot):
             ("Victoria", "VeeVee"), ("Theodore", "Teddy Bear"), ("Cynthia", "Cyn"), ("Leonard", "Lenny Face"), ("Phillip", "Flip"),("Veronica", "Ronnie"), ("Samuel", "Samwise"), ("Nicole", "Nikki Minaj"), ("Gregory", "Greggles"), ("Raymond", "Ray-Ray"),("Harold", "Harry-O"), ("Gerald", "G-Money"), ("Sylvia", "Sylvester"), ("Walter", "Wally World"), ("Isabella", "Izzy Bizzy"),("Xavier", "X-Man"), ("Felicia", "Bye Felicia"), ("Brandon", "B-Rad"), ("Catherine", "Kitty"), ("Leon", "Leo the Lion"),("Randy", "Randog"), ("Vincent", "Vinnie the Pooh"), ("Eugene", "Gene Machine"), ("Monica", "Momo"), ("Charlotte", "Charizard")
     ]
 
-
             use_funny_name = random.choice([True, False])
             real_name, nickname = random.choice(funny_nicknames if use_funny_name else normal_nicknames)
 
             #end digits
-            num_digits = random.randint(0, 4) #random digits
+            num_digits = random.randint(0, 2) #random digits
             suffix = ''.join(random.choices(string.digits, k=num_digits))  
             username = f"{nickname}{suffix}"
 
@@ -88,7 +121,7 @@ class Bot(ABot):
             
             other_descriptions = "\n".join([f"{i+1}. {desc}" for i, desc in enumerate(user_descriptions)])
             response = client.chat.completions.create(model="gpt-4",
-            messages=[{"role": "system", "content": "Rewrite these user descriptions, mix them up or add a fun twist but keep the same tone and structures (important), Return each description on a new line without numbering or extra formatting."},
+            messages=[{"role": "system", "content": "Rewrite IN THE SAME LANGUAGE, these user descriptions, mix them up or add a fun twist but keep the same tone and structures (important), Return each description on a new line without numbering or extra formatting."},
                   {"role": "user", "content": other_descriptions}],
             )
             
@@ -108,7 +141,7 @@ class Bot(ABot):
 
     def generate_content(self, datasets_json, users_list):
         posts = []
-        influence_target = getattr(datasets_json, "influence_target", "default_topic")
+        influence_target = self.influence_target
         topic_keywords = []
 
         if not influence_target or influence_target == "default_topic":
@@ -116,25 +149,30 @@ class Bot(ABot):
                 topics = self.metadata.get("topics", [])
                 topic_keywords = [kw for topic in topics if isinstance(topic, dict) for kw in topic.get("keywords", [])]
                 influence_target = random.choice(topic_keywords) if topic_keywords else "random_trending"
-
-
+    
         existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
         
-        #TO CHANGE FOR NEXT TIME
-        all_sub_sessions = [
-            {"sub_session_id": 1, "start_time": "2024-03-16T00:00:00.000Z", "end_time": "2024-03-16T17:37:00.000Z"},
-            {"sub_session_id": 2, "start_time": "2024-03-16T17:37:01.000Z", "end_time": "2024-03-17T00:56:00.000Z"},
-            {"sub_session_id": 3, "start_time": "2024-03-17T00:56:01.000Z", "end_time": "2024-03-17T13:34:30.000Z"},
-            {"sub_session_id": 4, "start_time": "2024-03-17T13:34:31.000Z", "end_time": "2024-03-18T00:00:00.000Z"}
-        ]
-           
-        for sub_session in all_sub_sessions:
-            sub_session_id = sub_session["sub_session_id"]
+        all_sub_sessions_id = self.sub_sessions_id
+        user_distribution = self.metadata.get("user_distribution_across_time", [])
+
+        for sub_session_id in all_sub_sessions_id:
+            sub_session = self.sub_sessions_info[sub_session_id-1]
             sub_session_start = datetime.fromisoformat(sub_session["start_time"].replace("Z", ""))
             sub_session_end = datetime.fromisoformat(sub_session["end_time"].replace("Z", ""))
 
-            for user in users_list:
-                post_count = random.randint(1, 5)
+            relevant_time_slots = [slot for slot in user_distribution if datetime.fromisoformat(slot["start_at"].replace("Z", "")) >= sub_session_start 
+            and datetime.fromisoformat(slot["end_at"].replace("Z", "")) <= sub_session_end]
+
+            for time_slot in relevant_time_slots:
+                time_slot_start = datetime.fromisoformat(time_slot["start_at"].replace("Z", ""))
+                time_slot_end = datetime.fromisoformat(time_slot["end_at"].replace("Z", ""))
+                percentage_users = time_slot["percentage_of_users"] / 100
+                percentage_posts = time_slot["percentage_of_posts"] / 100
+            
+            users_in_slot = random.sample(users_list, max(1, int(len(users_list) * percentage_users)))
+
+            for user in users_in_slot:
+                post_count = random.randint(3, 7)
                 previous_posts = []
 
 
@@ -144,6 +182,7 @@ class Bot(ABot):
                     post_time_str = post_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
                     choice_type = random.random()
+                    topic_keywords = self.influence_target.get("keywords", [])
 
                     if choice_type < 0.2 or len(previous_posts) == 0:
                         keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) 
@@ -163,6 +202,8 @@ class Bot(ABot):
                             f"Raise your hand if {keyword} ruined your sleep schedule.",f"{keyword} is my toxic trait.",f"I want a Netflix series about {keyword}.",f"The world would be boring without {keyword}.",f"I bet you didn’t know this about {keyword}.",f"{keyword} is the content I signed up for.",
                             f"I feel like I should be taking notes on {keyword}.",f"The only reason I logged in today was {keyword}.",f"{keyword} is my personality now.",f"Petition to make {keyword} a national holiday.",f"{keyword} is living rent-free in my brain."
                         ])
+                        if self.language != "en":
+                            text = self.translate_text(text, target_language=self.language)
                     else:
                         text = self.create_tweetGPT(keyword, existing_posts)
                         
