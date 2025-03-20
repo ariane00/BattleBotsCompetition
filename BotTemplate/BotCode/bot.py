@@ -201,7 +201,7 @@ class Bot(ABot):
             users_in_slot = random.sample(users_list, max(1, int(len(users_list) * percentage_users)))
 
             for user in users_in_slot:
-                post_count = random.randint(3, 7)
+                post_count = random.randint(10,15)
                 previous_posts = []
 
 
