@@ -17,16 +17,24 @@ class Bot(ABot):
     def create_tweetGPT(self, keyword, previous_posts = None):
         user_prompts = {
         "en": [
-            "Complain lightheartedly about something minor that happened today, and mention the keyword.",
+            "Complain lightheartedly about something minor that happened today",
             "Tweet a funny reaction to a trending topic (tied to the keyword), but make it sound personal.",
-            "Share a short, casual story about your day that ties into the keyword.",
-            "Write a tweet as though you’re telling a friend a small personal anecdote about the keyword."
+            "Share a short, casual story about your day",
+            "Write a tweet as though you’re telling a friend a small personal anecdote about a celebrity",
+            "Reflect on a funny misunderstanding with a friend or coworker",
+            "Share a weird dream you had last night in a humorous way", "Give a fun fact followed by a sarcastic joke",
+            "Talk about a country that has an interesting custom"
         ],
         "fr": [
-            "Plain un petit problème personnel qui t’est arrivé aujourd’hui, en mentionnant le mot-clé.",
-            "Réagis à un sujet tendance en faisant référence au mot-clé, mais fais en sorte que ce soit personnel.",
-            "Raconte une courte anecdote sur ta journée et relie-la au mot-clé.",
-            "Écris un tweet comme si tu racontais à un ami une anecdote sur le mot-clé."
+            "Plains-toi avec humour de quelque chose d'inimportant qui s'est passé aujourd'hui",
+            "Réagis d'un manière drôle à un sujet tendance (lié au mot-clé), ajoute une touche personnele.",
+            "Partager une courte histoire décontractée sur ta journée",
+            "Écrire un tweet comme si tu racontais une petite anecdote personnelle sur une célébrité à un ami",
+            "Revenir sur un malentendu amusant avec un ami ou un collègue",
+            "Partager un rêve étrange que tu as fait la nuit dernière de manière humoristique",
+            "Donner un fait divers suivi d'une blague sarcastique",
+            "Commente l'actualité en te plaignant",
+            "Plains-toi d'un fait divers"
         ]
     }
         personal_details = [
@@ -34,8 +42,29 @@ class Bot(ABot):
             "You got stuck in traffic",
             "You found a funny note on your door",
             "You nearly missed your bus",
-            "You stayed up too late binge-watching a show"
+            "You stayed up too late binge-watching a show",
+            "You accidentally liked a post from 5 years ago while stalking someone’s profile",
+            "You sent a message to the wrong group chat",
+            "You tripped over absolutely nothing in public",
+            "You forgot your headphones at home",
+            "You tried to unlock your front door with your car key",
+            "You waved back at someone who wasn’t actually waving at you",
+            "You mistook a stranger for someone you know",
+            "You got caught singing out loud with your headphones on",
+            "You walked into a glass door",
+            "You set an alarm but still overslept",
+            "You burned your tongue on hot coffee",
+            "You forgot what you were about to say mid-sentence",
+            "You started typing a reply but never sent it",
+            "You held the door open for someone too far away, making it awkward",
+            "You made eye contact with someone on public transport and panicked",
+            "You watched an entire episode and realized you weren’t paying attention",
+            "You dropped your phone on your face while lying in bed",
+            "You misheard lyrics and confidently sang the wrong words",
+            "You pressed ‘snooze’ too many times and had to rush out the door",
+            "You texted someone ‘happy birthday’ only to realize it was the wrong day"
         ]
+
         selected_prompts = user_prompts.get(self.language, user_prompts["en"])
         detail = random.choice(personal_details)
         if previous_posts:
@@ -43,11 +72,11 @@ class Bot(ABot):
             base_prompt = f"Here are some of my recent tweets:\n{context_posts}\n\nMake a new tweet in a similar style and tone.\n"
         else:
             base_prompt = "Write a brand-new tweet.\n"
-        final_prompt = f"{base_prompt}Keep it short, casual, and personal. Today’s personal detail: '{detail}'. Mention the keyword '{keyword}'. {random.choice(selected_prompts)}"
+        final_prompt = f"{base_prompt}Keep it short, casual, and personal. Today’s personal detail: '{detail}'. {random.choice(selected_prompts)}"
         system_prompt = f"You are a casual, chronically-online Twitter user who often references personal experiences and minor daily annoyances. Use a laid-back tone, occasional slang, minimal hashtags, never mention you’re an AI, and tweet in {self.language}."
         response = client.chat.completions.create(
             model="gpt-4",
-            temperature=0.9, presence_penalty=0.5,
+            temperature=0.95, 
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": final_prompt}
@@ -184,24 +213,30 @@ class Bot(ABot):
                     choice_type = random.random()
                     topic_keywords = self.influence_target.get("keywords", [])
 
-                    if choice_type < 0.2 or len(previous_posts) == 0:
-                        keyword = influence_target if random.random() < 0.5 else random.choice(topic_keywords) 
+                    if choice_type < 0.1 or len(previous_posts) == 0:
+                        keyword = self.influence_target.get("topic", []) if random.random() < 0.5 else random.choice(topic_keywords) 
                         text = random.choice([
-                            f"Can't stop thinking about {keyword}.",f"Why is everyone talking about {keyword}?",f"Anyone else obsessed with {keyword} lately?",f"{keyword} is taking over my life!",f"What are your thoughts on {keyword}?",f"Just saw something wild about {keyword}.",f"Let’s settle this: is {keyword} overrated?",f"Can’t believe what just happened in {keyword}!",
-                            f"My feed is full of {keyword}, and I’m not mad about it.",f"Lowkey addicted to {keyword}.",f"If you don’t love {keyword}, we can’t be friends.",f"Does anyone still care about {keyword}?",f"Need more {keyword} content ASAP.",
-                            f"I could talk about {keyword} all day.",f"Explain {keyword} to me like I'm five.",f"Why is {keyword} trending again?",f"{keyword} is pure nostalgia!",f"I swear {keyword} keeps getting better.",f"Who else remembers when {keyword} first started?",f"What’s your unpopular opinion on {keyword}?",
-                            f"I might be the only one who still follows {keyword}.",f"Just realized I’ve been following {keyword} for years.",f"{keyword} reminds me of simpler times.",f"Not gonna lie, {keyword} had me in tears today.",f"Wish I could experience {keyword} for the first time again.",f"Is it just me, or is {keyword} everywhere?",f"I need a full documentary on {keyword}.",
-                            f"What’s the best moment in {keyword} history?",f"{keyword} fans, assemble!",f"I have so many questions about {keyword}.",f"Somebody explain {keyword} to me!",f"{keyword} just changed the game!",f"This take on {keyword} is actually genius.",
-                            f"Can’t believe I slept on {keyword}.",f"Why didn’t anyone tell me {keyword} was this good?",f"{keyword} discourse is getting out of hand.",f"The debate around {keyword} is wild.",f"If you could change one thing about {keyword}, what would it be?",
-                            f"Okay, but imagine {keyword} in 10 years.",f"Looking back, {keyword} was ahead of its time.",f"{keyword} stans are built different.",f"What’s the best way to get into {keyword}?",f"Convince me to care about {keyword}.",f"If {keyword} had a theme song, what would it be?",f"I feel like {keyword} is misunderstood.",f"People really sleep on {keyword}.",f"{keyword} deserves more respect.",
-                            f"Why is {keyword} so controversial?",f"Tell me one fun fact about {keyword}.",f"Okay but hear me out: {keyword}.",f"I’m about to do a deep dive on {keyword}.",f"Every time I try to ignore {keyword}, it pulls me back in.",f"Today’s hot take: {keyword} is actually amazing.",f"{keyword} appreciation post!",f"Tell me something I don’t know about {keyword}.",f"If you don’t follow {keyword}, you’re missing out.",
-                            f"{keyword} needs its own fan club.",f"I have a love-hate relationship with {keyword}.",f"What’s the wildest thing about {keyword}?",f"The more I learn about {keyword}, the more obsessed I get.",
-                            f"{keyword} makes me feel some type of way.",f"Do we think {keyword} is here to stay?",f"Who else remembers the golden age of {keyword}?",f"Unpopular opinion: {keyword} is actually great.",f"If you know, you know: {keyword}.",f"{keyword} is proof that the internet is undefeated.",f"The best thing about {keyword}? The memes.",f"How did {keyword} even start?",f"Why do people have such strong opinions about {keyword}?",f"{keyword} hits different at 2 AM.",f"Real ones know the impact of {keyword}.",f"{keyword} is the reason I still have Twitter.",f"What’s the best {keyword} moment of all time?",f"Okay but imagine a world without {keyword}.",
-                            f"What’s the most underrated part of {keyword}?",f"I just went down a rabbit hole on {keyword}.",f"If {keyword} was a movie, who would play the lead?",f"What’s your favorite memory of {keyword}?",f"I need a whole podcast on {keyword}.",f"Nothing brings people together like {keyword}.",
-                            f"Can someone explain why {keyword} is blowing up?",f"{keyword} fans are the real MVPs.",f"One thing about {keyword}—it never disappoints.",f"{keyword} just made my day.",f"Honestly, {keyword} is an art form.",f"The only thing I care about right now is {keyword}.",f"Is {keyword} getting better or worse?",
-                            f"Raise your hand if {keyword} ruined your sleep schedule.",f"{keyword} is my toxic trait.",f"I want a Netflix series about {keyword}.",f"The world would be boring without {keyword}.",f"I bet you didn’t know this about {keyword}.",f"{keyword} is the content I signed up for.",
-                            f"I feel like I should be taking notes on {keyword}.",f"The only reason I logged in today was {keyword}.",f"{keyword} is my personality now.",f"Petition to make {keyword} a national holiday.",f"{keyword} is living rent-free in my brain."
-                        ])
+                                f"I just realized how deep I’ve gone down the {keyword} rabbit hole today.",
+                                f"Anyone else trying to figure out what makes {keyword} so addictive?",
+                                f"I’m torn—am I overthinking {keyword}, or is it really that big of a deal?",
+                                f"Can't decide if {keyword} deserves this hype or if we're all just bored.",
+                                f"Every time I promise to ignore {keyword}, something pulls me right back in.",
+                                f"Is it weird that {keyword} is all I see on my feed lately?",
+                                f"Suddenly, everyone’s an expert on {keyword} and I’m just here with my popcorn.",
+                                f"I was skeptical about {keyword}, but now I’m the one who won’t stop talking about it.",
+                                f"I swear I blinked and {keyword} took over the entire internet.",
+                                f"The debate around {keyword} is intense—do we need a referee or something?",
+                                f"I thought {keyword} was overrated until I actually paid attention to it.",
+                                f"It’s wild how half my day disappeared because I kept scrolling through {keyword} updates.",
+                                f"I used to roll my eyes at {keyword}, but now I’m fully invested in the drama.",
+                                f"Not gonna lie, {keyword} kinda sparked my curiosity more than I care to admit.",
+                                f"Somehow, {keyword} has turned into my go-to conversation starter this week.",
+                                f"I’m still on the fence about {keyword}, but it’s definitely not boring.",
+                                f"When did my timeline decide that {keyword} was the only thing worth discussing?",
+                                f"I love how {keyword} can bring out the best (and worst) in people’s takes.",
+                                f"So... are we all just pretending {keyword} isn’t low-key controlling our lives?",
+                                f"Never thought I’d say this, but I might be in too deep with {keyword} now."
+                            ])
                         if self.language != "en":
                             text = self.translate_text(text, target_language=self.language)
                     else:
