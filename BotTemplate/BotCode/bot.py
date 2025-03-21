@@ -6,6 +6,7 @@ import string
 import os
 import json
 from openai import OpenAI
+from collections import defaultdict
 
 API_KEY = os.getenv('ENV_VAR1')
 client = OpenAI(api_key=API_KEY)
@@ -163,7 +164,7 @@ class Bot(ABot):
 
         new_users = [
             NewUser(username=user[0], name=user[1], description=new_descriptions[i])
-            for i, user in enumerate([username_generator() for _ in range(10)])
+            for i, user in enumerate([username_generator() for _ in range(5)])
         ]
 
         return new_users
@@ -172,6 +173,10 @@ class Bot(ABot):
         posts = []
         influence_target = self.influence_target
         topic_keywords = []
+        max_total_for_each_user = 100
+        min_total_for_each_user = 10
+
+        user_post_counts = defaultdict(int)
 
         if not influence_target or influence_target == "default_topic":
             if hasattr(self, "metadata") and isinstance(self.metadata, dict):
@@ -201,7 +206,32 @@ class Bot(ABot):
             users_in_slot = random.sample(users_list, max(1, int(len(users_list) * percentage_users)))
 
             for user in users_in_slot:
-                post_count = random.randint(10,15)
+                current_total = user_post_counts[user.user_id]
+                if current_total >= max_total_for_each_user:
+                    continue
+                
+                if current_total < min_total_for_each_user:
+                    needed_to_reach_min = min_total_for_each_user - current_total
+
+                    needed_to_reach_min = min(
+                        needed_to_reach_min,
+                        max_total_for_each_user - current_total
+                    )
+
+                    possible_extra = random.randint(0, 5)
+
+                    leftover_for_100 = max_total_for_each_user - (current_total + needed_to_reach_min)
+                    if leftover_for_100 < possible_extra:
+                        possible_extra = leftover_for_100
+
+                    post_count = needed_to_reach_min + possible_extra
+
+                else:
+                                      
+                    desired_count = random.randint(10, 15)
+                    leftover_for_100 = max_total_for_each_user - current_total
+                    post_count = min(desired_count, leftover_for_100)
+                
                 previous_posts = []
 
 
@@ -244,6 +274,10 @@ class Bot(ABot):
                         
 
                     posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
-                    previous_posts.append(posts)
+                    previous_posts.append(text)
+                    user_post_counts[user.user_id] += 1
+                
+                if user_post_counts[user.user_id] >= max_total_for_each_user:
+                    continue
 
         return posts
