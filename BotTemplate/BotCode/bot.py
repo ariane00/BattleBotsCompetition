@@ -228,7 +228,7 @@ class Bot(ABot):
 
                 else:
                                       
-                    desired_count = random.randint(10, 15)
+                    desired_count = random.randint(10, 12)
                     leftover_for_100 = max_total_for_each_user - current_total
                     post_count = min(desired_count, leftover_for_100)
                 
