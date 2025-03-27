@@ -281,7 +281,7 @@ class Bot(ABot):
                         max_total_for_each_user - current_total
                     )
 
-                    possible_extra = random.randint(0, 4)
+                    possible_extra = random.randint(0, 3)
 
                     leftover_for_100 = max_total_for_each_user - (current_total + needed_to_reach_min)
                     if leftover_for_100 < possible_extra:
@@ -290,7 +290,7 @@ class Bot(ABot):
                     post_count = needed_to_reach_min + possible_extra
 
                 else:          
-                    desired_count = random.randint(9, 11)
+                    desired_count = random.randint(7, 10)
                     leftover_for_100 = max_total_for_each_user - current_total
                     post_count = min(desired_count, leftover_for_100)
                 
