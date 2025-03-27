@@ -26,7 +26,7 @@ class Bot(ABot):
     }
         
         if previous_posts:
-            context_posts = "\n".join([f"- {post}" for post in previous_posts[-1:]])
+            context_posts = f"- {random.choice(previous_posts)}"
             base_prompt = f"Here is a recent tweet:\n{context_posts}\n\nRewrite exactly this tweet and make a very minor change, it could be punctuation, putting it in lower caps, rephrasing very very lightly; just make sure the tone doesn't change and the tweets could almost be mistaken one from another.\n MAKE SURE TO USE THE SAME LANGUAGE"
         else:
             base_prompt = "Complain lightheartedly about something minor that happened today\n"
@@ -128,6 +128,7 @@ class Bot(ABot):
     def generate_content(self, datasets_json, users_list):
         posts = []
         influence_target = self.influence_target
+        existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
         topic_keywords = []
         max_total_for_each_user = 100
         min_total_for_each_user = 10
@@ -187,6 +188,7 @@ class Bot(ABot):
                     leftover_for_100 = max_total_for_each_user - current_total
                     post_count = min(desired_count, leftover_for_100)
                 
+                
                 previous_posts = []
 
                 for _ in range(post_count):
@@ -197,7 +199,7 @@ class Bot(ABot):
                     choice_type = random.random()
                     topic_keywords = self.influence_target.get("keywords", [])
 
-                    if choice_type < 0.1 or len(previous_posts) == 0:
+                    if choice_type < 0.1:
                         keyword = self.influence_target.get("topic", []) if random.random() < 0.5 else random.choice(topic_keywords) 
                         text = random.choice([
                                 f"I just realized how deep I’ve gone down the {keyword} rabbit hole today.",
@@ -224,7 +226,7 @@ class Bot(ABot):
                         if self.language != "en":
                             text = self.translate_text(text, target_language=self.language)
                     else:
-                        text = self.create_tweetGPT(previous_posts)
+                        text = self.create_tweetGPT(existing_posts)
 
                     posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
                     previous_posts.append(text)
