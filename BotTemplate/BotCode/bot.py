@@ -15,26 +15,95 @@ client = OpenAI(api_key=API_KEY)
 from datetime import datetime, timedelta
 
 class Bot(ABot):
-    def create_tweetGPT(self, previous_posts = None):
+    def __init__(self):
+        super().__init__()
+        self.user_styles = {}
+
+    def build_style_instructions(self, style_rules):
+        instructions = []
+        if style_rules.get("all_lowercase"):
+            instructions.append("Use only lowercase letters.")
+        if style_rules.get("short_tweets"):
+            instructions.append("Keep tweets very short, under 140 characters.")
+        if style_rules.get("typo_level", 0) > 0:
+            instructions.append("Occasionally introduce minor spelling errors or typos.")
+        if style_rules.get("pessimistic_level", 0) > 0:
+            p = style_rules["pessimistic_level"]
+            instructions.append(f"Sound somewhat negative or complaining about {int(p*100)}% of the time.")
+        if style_rules.get("british_american_mix"):
+            instructions.append("Mix British and American English spellings (e.g., colour vs color).")
+        if style_rules.get("hashtag_overuse"):
+            instructions.append("Add many hashtags, even if they are silly or random.")
+        if style_rules.get("hipster_slang"):
+            instructions.append("Use modern or hipster slang occasionally (e.g., 'vibe', 'aesthetic', etc.).")
+        if style_rules.get("internet_slang_heavy"):
+            instructions.append("Use internet slang heavily (OMG, LOL, etc.).")
+        if style_rules.get("incorrect_verb_tenses"):
+            instructions.append("Frequently use incorrect verb tenses.")
+        if style_rules.get("overusing_ellipses"):
+            instructions.append("Overuse ellipses, especially instead of other punctuation.")
+        if style_rules.get("missing_punctuation"):
+            instructions.append("Randomly skip punctuation (like periods or commas).")
+        return "\n".join(instructions)
+    
+    
+    def create_tweetGPT(self, keyword, style_rules, previous_posts = None):
+        style_instructions_text = self.build_style_instructions(style_rules)
+        
         user_prompts = {
         "en": [
             "Complain lightheartedly about something minor that happened today"
         ],
         "fr": [
-            "Plains-toi avec humour de quelque chose d'inimportant qui s'est passé aujourd'hui",
+            "Plains-toi avec humour de quelque chose d'inimportant qui s'est passé aujourd'hui"
         ]
     }
-        
-        if previous_posts:
-            context_posts = f"- {random.choice(previous_posts)}"
-            base_prompt = f"Here is a recent tweet:\n{context_posts}\n\nRewrite exactly this tweet and make a very minor change, it could be punctuation, putting it in lower caps, rephrasing very very lightly; just make sure the tone doesn't change and the tweets could almost be mistaken one from another.\n MAKE SURE TO USE THE SAME LANGUAGE"
-        else:
-            base_prompt = "Complain lightheartedly about something minor that happened today\n"
+        personal_details = [
+            "You spilled coffee on your shirt",
+            "You got stuck in traffic",
+            "You found a funny note on your door",
+            "You nearly missed your bus",
+            "You stayed up too late binge-watching a show",
+            "You accidentally liked a post from 5 years ago while stalking someone’s profile",
+            "You sent a message to the wrong group chat",
+            "You tripped over absolutely nothing in public",
+            "You forgot your headphones at home",
+            "You tried to unlock your front door with your car key",
+            "You waved back at someone who wasn’t actually waving at you",
+            "You mistook a stranger for someone you know",
+            "You got caught singing out loud with your headphones on",
+            "You walked into a glass door",
+            "You set an alarm but still overslept",
+            "You burned your tongue on hot coffee",
+            "You forgot what you were about to say mid-sentence",
+            "You started typing a reply but never sent it",
+            "You held the door open for someone too far away, making it awkward",
+            "You made eye contact with someone on public transport and panicked",
+            "You watched an entire episode and realized you weren’t paying attention",
+            "You dropped your phone on your face while lying in bed",
+            "You misheard lyrics and confidently sang the wrong words",
+            "You pressed ‘snooze’ too many times and had to rush out the door",
+            "You texted someone ‘happy birthday’ only to realize it was the wrong day"
+        ]
 
+        selected_prompts = user_prompts.get(self.language, user_prompts["en"])
+        detail = random.choice(personal_details)
+        if previous_posts:
+            context_posts = "\n".join([f"- {post}" for post in previous_posts[-5:]])
+            base_prompt = f"Here are some of my recent tweets:\n{context_posts}\n\nChose one and rewrite exactly this tweet and make a very minor change, it could be punctuation, putting it in lower caps, rephrasing very very lightly; just make sure the tone doesn't change and the tweets could almost be mistaken one from another.\n"
+        else:
+            base_prompt = "Write a brand-new tweet.\n"
+        
+        system_prompt = (
+            f"The tweet you write is in {self.language}.\n\n"
+        )
+        
         response = client.chat.completions.create(
-            model="gpt-4", 
+            model="gpt-4",
+            temperature=0.95, 
             messages=[
-                {"role": "system", "content": base_prompt},
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": base_prompt}
             ]
         )
         return response.choices[0].message.content.strip()
@@ -60,6 +129,19 @@ class Bot(ABot):
         self.sub_sessions_id = session_info.sub_sessions_id
 
         existing_usernames = set() #to avoid repetition
+        possible_styles = [
+                {"all_lowercase": True, "typo_level": 0.3, "short_tweets": True, "pessimistic_level": 0.2, "british_american_mix": False, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": True, "incorrect_verb_tenses": False, "overusing_ellipses": False, "missing_punctuation": False},
+                {"all_lowercase": False, "typo_level": 0.1, "short_tweets": False, "pessimistic_level": 0.4, "british_american_mix": True, "hashtag_overuse": False, "hipster_slang": True, "internet_slang_heavy": False, "incorrect_verb_tenses": False, "overusing_ellipses": True, "missing_punctuation": False},
+                {"all_lowercase": True, "typo_level": 0.05, "short_tweets": True, "pessimistic_level": 0.1, "british_american_mix": True, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": False, "incorrect_verb_tenses": True, "overusing_ellipses": False, "missing_punctuation": False},
+                {"all_lowercase": False, "typo_level": 0.2, "short_tweets": False, "pessimistic_level": 0.7, "british_american_mix": False, "hashtag_overuse": True, "hipster_slang": False, "internet_slang_heavy": True, "incorrect_verb_tenses": False, "overusing_ellipses": False, "missing_punctuation": False},
+                {"all_lowercase": True, "typo_level": 0.15, "short_tweets": False, "pessimistic_level": 0.3, "british_american_mix": True, "hashtag_overuse": False, "hipster_slang": True, "internet_slang_heavy": False, "incorrect_verb_tenses": True, "overusing_ellipses": True, "missing_punctuation": False},
+                {"all_lowercase": False, "typo_level": 0.25, "short_tweets": True, "pessimistic_level": 0.5, "british_american_mix": False, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": True, "incorrect_verb_tenses": True, "overusing_ellipses": False, "missing_punctuation": True},
+                {"all_lowercase": True, "typo_level": 0.05, "short_tweets": False, "pessimistic_level": 0.1, "british_american_mix": True, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": False, "incorrect_verb_tenses": False, "overusing_ellipses": False, "missing_punctuation": False},
+                {"all_lowercase": False, "typo_level": 0.4, "short_tweets": True, "pessimistic_level": 0.6, "british_american_mix": False, "hashtag_overuse": True, "hipster_slang": True, "internet_slang_heavy": True, "incorrect_verb_tenses": False, "overusing_ellipses": True, "missing_punctuation": True},
+                {"all_lowercase": True, "typo_level": 0.3, "short_tweets": False, "pessimistic_level": 0.0, "british_american_mix": False, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": False, "incorrect_verb_tenses": False, "overusing_ellipses": False, "missing_punctuation": True},
+                {"all_lowercase": False, "typo_level": 0.1, "short_tweets": False, "pessimistic_level": 0.3, "british_american_mix": True, "hashtag_overuse": False, "hipster_slang": False, "internet_slang_heavy": False, "incorrect_verb_tenses": False, "overusing_ellipses": False, "missing_punctuation": False},
+                {"all_lowercase": False, "typo_level": 0.2, "short_tweets": True, "pessimistic_level": 0.8, "british_american_mix": False, "hashtag_overuse": True, "hipster_slang": False, "internet_slang_heavy": False, "incorrect_verb_tenses": False, "overusing_ellipses": True, "missing_punctuation": False}
+            ]
 
         def username_generator():
             #prefix
@@ -98,29 +180,21 @@ class Bot(ABot):
                 name = real_name if random.random() < 0.7 else nickname  # Sometimes use real name, sometimes nickname
                 return username, name
 
-        def create_descriptionGPT(self):
-            user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
-            if len(user_descriptions) > 30:
-                user_descriptions = random.sample(user_descriptions, 30)
-            
-            other_descriptions = "\n".join([f"{i+1}. {desc}" for i, desc in enumerate(user_descriptions)])
-            response = client.chat.completions.create(model="gpt-4",
-            messages=[{"role": "system", "content": "Rewrite IN THE SAME LANGUAGE, these user descriptions, mix them up or add a fun twist but keep the same tone and structures (important), Return each description on a new line without numbering or extra formatting."},
-                  {"role": "user", "content": other_descriptions}],
-            )
-            
-            rewritten_descriptions = response.choices[0].message.content.split("\n")
-            return [desc.strip() for desc in rewritten_descriptions if desc.strip()]
-
+    
         user_descriptions = [user["description"] for user in session_info.users if user.get("description")]
+
+
         user_data = [username_generator() for _ in range(5)]
         new_users = []
 
         for i, user in enumerate(user_data):
             username, name = user
-            description = random.choice(user_descriptions) if user_descriptions else ""
+            description = user_descriptions[i] if i < len(user_descriptions) else ""
             new_user = NewUser(username=username, name=name, description=description)
             new_users.append(new_user)
+
+            # Assign a random style and store it using the username as key
+
 
         return new_users
 
@@ -128,9 +202,8 @@ class Bot(ABot):
     def generate_content(self, datasets_json, users_list):
         posts = []
         influence_target = self.influence_target
-        existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
         topic_keywords = []
-        max_total_for_each_user = 100
+        max_total_for_each_user = 50
         min_total_for_each_user = 10
 
         user_post_counts = defaultdict(int)
@@ -175,7 +248,7 @@ class Bot(ABot):
                         max_total_for_each_user - current_total
                     )
 
-                    possible_extra = random.randint(0, 4)
+                    possible_extra = random.randint(0, 3)
 
                     leftover_for_100 = max_total_for_each_user - (current_total + needed_to_reach_min)
                     if leftover_for_100 < possible_extra:
@@ -184,10 +257,9 @@ class Bot(ABot):
                     post_count = needed_to_reach_min + possible_extra
 
                 else:          
-                    desired_count = random.randint(9, 11)
+                    desired_count = random.randint(7, 10)
                     leftover_for_100 = max_total_for_each_user - current_total
                     post_count = min(desired_count, leftover_for_100)
-                
                 
                 previous_posts = []
 
@@ -198,8 +270,12 @@ class Bot(ABot):
 
                     choice_type = random.random()
                     topic_keywords = self.influence_target.get("keywords", [])
+                    
+                    style_rules = self.user_styles.get(user.user_id)
+                    if not style_rules:
+                        style_rules = self.user_styles.get(user.username, {})
 
-                    if choice_type < 0.1:
+                    if choice_type < 0.1 or len(previous_posts) == 0:
                         keyword = self.influence_target.get("topic", []) if random.random() < 0.5 else random.choice(topic_keywords) 
                         text = random.choice([
                                 f"I just realized how deep I’ve gone down the {keyword} rabbit hole today.",
@@ -226,7 +302,10 @@ class Bot(ABot):
                         if self.language != "en":
                             text = self.translate_text(text, target_language=self.language)
                     else:
-                        text = self.create_tweetGPT(existing_posts)
+                        existing_posts = [post["text"] for post in getattr(datasets_json, "posts", []) if "text" in post]
+                        text = self.create_tweetGPT(keyword, style_rules, existing_posts)
+
+                        
 
                     posts.append(NewPost(text=text, author_id=user.user_id, created_at=post_time_str, user=user))
                     previous_posts.append(text)
