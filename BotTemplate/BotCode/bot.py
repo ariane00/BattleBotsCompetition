@@ -203,7 +203,7 @@ class Bot(ABot):
         posts = []
         influence_target = self.influence_target
         topic_keywords = []
-        max_total_for_each_user = 50
+        max_total_for_each_user = 40
         min_total_for_each_user = 10
 
         user_post_counts = defaultdict(int)
